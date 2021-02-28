@@ -6,9 +6,9 @@ This file creates your application.
 """
 import os
 from app import app
-from flask import render_template, request, redirect, url_for, flash, session, abort
+from flask import render_template, request, redirect, url_for, flash, session, abort, send_from_directory
 from werkzeug.utils import secure_filename
-
+from .forms import UploadForm
 
 ###
 # Routing for your application.
@@ -32,15 +32,20 @@ def upload():
         abort(401)
 
     # Instantiate your form class
-
+    photo_upload = UploadForm()
     # Validate file upload on submit
-    if request.method == 'POST':
+    if request.method == 'POST' and photo_upload.validate_on_submit():
+        print(request.files['photo_test'])
+        app.logger.info('posted')
         # Get file data and save to your uploads folder
-
+        picture = photo_upload.photo_test.data
+        filename = secure_filename(picture.filename)
+        picture.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         flash('File Saved', 'success')
         return redirect(url_for('home'))
 
-    return render_template('upload.html')
+    flash_errors(photo_upload)
+    return render_template('upload.html', form=photo_upload)
 
 
 @app.route('/login', methods=['POST', 'GET'])
@@ -56,6 +61,31 @@ def login():
             return redirect(url_for('upload'))
     return render_template('login.html', error=error)
 
+def get_uploaded_images():
+    uploads = []
+    for subdir, dirs, files in os.walk(app.config['UPLOAD_FOLDER']):
+        for file in files:
+            if file.split('.')[-1] in ['png', 'jpg']:
+                uploads.append(file)
+    
+    return uploads
+
+@app.route('/uploads/<path:filename>')
+def get_image(filename):
+    FILES_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), app.config['UPLOAD_FOLDER']))
+    return send_from_directory(FILES_DIR, filename, as_attachment =True)
+    
+    
+@app.route('/files')
+def files():
+    if not session.get('logged_in'):
+        abort(401)
+
+
+    picture_file_list = get_uploaded_images()
+    print(picture_file_list)
+    return render_template('files.html', uploaded_images=picture_file_list)
+
 
 @app.route('/logout')
 def logout():
@@ -67,6 +97,8 @@ def logout():
 ###
 # The functions below should be applicable to all Flask apps.
 ###
+
+
 
 # Flash errors from the form if validation fails
 def flash_errors(form):

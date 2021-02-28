@@ -50,6 +50,7 @@ def upload():
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
+    
     error = None
     if request.method == 'POST':
         if request.form['username'] != app.config['ADMIN_USERNAME'] or request.form['password'] != app.config['ADMIN_PASSWORD']:
@@ -70,10 +71,12 @@ def get_uploaded_images():
     
     return uploads
 
-@app.route('/uploads/<path:filename>')
+@app.route('/uploads/<filename>')
 def get_image(filename):
-    FILES_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), app.config['UPLOAD_FOLDER']))
-    return send_from_directory(FILES_DIR, filename, as_attachment =True)
+    
+    UPLOAD_FILE_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), app.config['UPLOAD_FOLDER']))
+    
+    return send_from_directory(UPLOAD_FILE_DIR, filename, as_attachment =True)
     
     
 @app.route('/files')
@@ -81,10 +84,9 @@ def files():
     if not session.get('logged_in'):
         abort(401)
 
-
-    picture_file_list = get_uploaded_images()
+    upload_list = get_uploaded_images()
     print(picture_file_list)
-    return render_template('files.html', uploaded_images=picture_file_list)
+    return render_template('files.html', uploaded_images=upload_list)
 
 
 @app.route('/logout')
@@ -97,7 +99,6 @@ def logout():
 ###
 # The functions below should be applicable to all Flask apps.
 ###
-
 
 
 # Flash errors from the form if validation fails

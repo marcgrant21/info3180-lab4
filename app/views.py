@@ -85,7 +85,6 @@ def files():
         abort(401)
 
     upload_list = get_uploaded_images()
-    print(picture_file_list)
     return render_template('files.html', uploaded_images=upload_list)
 
 
